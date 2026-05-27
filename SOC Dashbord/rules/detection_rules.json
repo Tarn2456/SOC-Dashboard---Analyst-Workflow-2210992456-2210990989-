@@ -1,0 +1,270 @@
+[
+    {
+        "id": "RULE-001",
+        "name": "Suspicious PowerShell Execution",
+        "description": "Detects PowerShell commands with potentially malicious patterns such as encoded commands, download cradles, or execution policy bypasses.",
+        "severity": "high",
+        "category": "execution",
+        "mitre_tactic": "Execution",
+        "mitre_technique": "T1059.001",
+        "mitre_technique_name": "Command and Scripting Interpreter: PowerShell",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"process.name": "powershell.exe"}},
+                    {"term": {"event.action": "process_create"}}
+                ],
+                "should": [
+                    {"wildcard": {"process.command_line.keyword": "*-enc*"}},
+                    {"wildcard": {"process.command_line.keyword": "*DownloadString*"}},
+                    {"wildcard": {"process.command_line.keyword": "*Invoke-WebRequest*"}},
+                    {"wildcard": {"process.command_line.keyword": "*Bypass*"}},
+                    {"wildcard": {"process.command_line.keyword": "*IEX*"}},
+                    {"wildcard": {"process.command_line.keyword": "*Net.WebClient*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-002",
+        "name": "Brute-Force Login Attempt",
+        "description": "Detects multiple failed logon attempts indicating a potential brute-force attack.",
+        "severity": "medium",
+        "category": "credential_access",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110.001",
+        "mitre_technique_name": "Brute Force: Password Guessing",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"event.action": "logon_failure"}},
+                    {"term": {"event.category": "authentication"}}
+                ]
+            }
+        }
+    },
+    {
+        "id": "RULE-003",
+        "name": "New Admin Account Created",
+        "description": "Detects creation of accounts with administrative privileges, which may indicate privilege escalation or persistence.",
+        "severity": "critical",
+        "category": "persistence",
+        "mitre_tactic": "Persistence",
+        "mitre_technique": "T1136.001",
+        "mitre_technique_name": "Create Account: Local Account",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"event.category": "iam"}},
+                    {"term": {"event.action": "account_created"}}
+                ],
+                "should": [
+                    {"wildcard": {"message": "*Administrators*"}},
+                    {"wildcard": {"message": "*admin*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-004",
+        "name": "Rare Outbound Network Connection",
+        "description": "Detects outbound network connections to uncommon external IPs or suspicious ports, indicating C2 communication or data exfiltration.",
+        "severity": "high",
+        "category": "command_and_control",
+        "mitre_tactic": "Command and Control",
+        "mitre_technique": "T1071.001",
+        "mitre_technique_name": "Application Layer Protocol: Web Protocols",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"event.action": "network_connection"}},
+                    {"term": {"network.direction": "outbound"}}
+                ],
+                "should": [
+                    {"terms": {"destination.port": [4444, 1337, 8443]}},
+                    {"range": {"destination.port": {"gte": 1024, "lte": 1340}}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-005",
+        "name": "Certutil Abuse for File Download",
+        "description": "Detects the use of certutil.exe to download files from external URLs, a common LOLBin technique.",
+        "severity": "high",
+        "category": "defense_evasion",
+        "mitre_tactic": "Defense Evasion",
+        "mitre_technique": "T1140",
+        "mitre_technique_name": "Deobfuscate/Decode Files or Information",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"process.name": "certutil.exe"}},
+                    {"term": {"event.action": "process_create"}}
+                ],
+                "should": [
+                    {"wildcard": {"process.command_line.keyword": "*urlcache*"}},
+                    {"wildcard": {"process.command_line.keyword": "*http*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-006",
+        "name": "Suspicious Script Host Execution",
+        "description": "Detects execution of Windows Script Host (wscript/mshta) which can be abused to run malicious scripts.",
+        "severity": "medium",
+        "category": "execution",
+        "mitre_tactic": "Execution",
+        "mitre_technique": "T1059.005",
+        "mitre_technique_name": "Command and Scripting Interpreter: Visual Basic",
+        "query": {
+            "bool": {
+                "must": [{"term": {"event.action": "process_create"}}],
+                "should": [
+                    {"term": {"process.name": "wscript.exe"}},
+                    {"term": {"process.name": "mshta.exe"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-007",
+        "name": "VSS Shadow Copy Deletion",
+        "description": "Detects deletion of Volume Shadow Copies via vssadmin or wmic — a hallmark of ransomware attacks to prevent recovery.",
+        "severity": "critical",
+        "category": "impact",
+        "mitre_tactic": "Impact",
+        "mitre_technique": "T1490",
+        "mitre_technique_name": "Inhibit System Recovery",
+        "query": {
+            "bool": {
+                "must": [{"term": {"event.action": "process_create"}}],
+                "should": [
+                    {"wildcard": {"process.command_line.keyword": "*vssadmin*delete*"}},
+                    {"wildcard": {"process.command_line.keyword": "*delete shadows*"}},
+                    {"wildcard": {"process.command_line.keyword": "*shadowcopy delete*"}},
+                    {"term": {"process.name": "vssadmin.exe"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-008",
+        "name": "RDP Brute Force Attack",
+        "description": "Detects multiple failed RDP login attempts from the same source IP — indicates a targeted brute-force against Remote Desktop.",
+        "severity": "high",
+        "category": "credential_access",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110.003",
+        "mitre_technique_name": "Brute Force: Password Spraying",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"event.action": "logon_failure"}},
+                    {"term": {"event.category": "authentication"}}
+                ],
+                "should": [
+                    {"term": {"destination.port": 3389}},
+                    {"term": {"source.port": 3389}},
+                    {"wildcard": {"message": "*RDP*"}},
+                    {"wildcard": {"message": "*RemoteDesktop*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-009",
+        "name": "Windows Event Log Cleared",
+        "description": "Detects clearing of Windows Event Logs — an anti-forensics technique used by attackers to hide their tracks.",
+        "severity": "high",
+        "category": "defense_evasion",
+        "mitre_tactic": "Defense Evasion",
+        "mitre_technique": "T1070.001",
+        "mitre_technique_name": "Indicator Removal: Clear Windows Event Logs",
+        "query": {
+            "bool": {
+                "must": [{"term": {"event.action": "process_create"}}],
+                "should": [
+                    {"wildcard": {"process.command_line.keyword": "*wevtutil*cl*"}},
+                    {"wildcard": {"process.command_line.keyword": "*Clear-EventLog*"}},
+                    {"wildcard": {"message": "*log cleared*"}},
+                    {"wildcard": {"tags": "*log_cleared*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-010",
+        "name": "Lateral Movement via SMB",
+        "description": "Detects outbound SMB connections on port 445 from workstations to other internal hosts — may indicate lateral movement or pass-the-hash.",
+        "severity": "high",
+        "category": "lateral_movement",
+        "mitre_tactic": "Lateral Movement",
+        "mitre_technique": "T1021.002",
+        "mitre_technique_name": "Remote Services: SMB/Windows Admin Shares",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"event.action": "network_connection"}},
+                    {"term": {"network.protocol": "smb"}}
+                ],
+                "should": [
+                    {"term": {"destination.port": 445}},
+                    {"wildcard": {"tags": "*lateral_movement*"}},
+                    {"wildcard": {"message": "*SMB*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    },
+    {
+        "id": "RULE-011",
+        "name": "Large Data Exfiltration Transfer",
+        "description": "Detects unusually large outbound network transfers (>100MB) to external IPs — may indicate data exfiltration.",
+        "severity": "critical",
+        "category": "exfiltration",
+        "mitre_tactic": "Exfiltration",
+        "mitre_technique": "T1048",
+        "mitre_technique_name": "Exfiltration Over Alternative Protocol",
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"event.action": "network_connection"}},
+                    {"term": {"network.direction": "outbound"}},
+                    {"range": {"network.bytes": {"gte": 104857600}}}
+                ]
+            }
+        }
+    },
+    {
+        "id": "RULE-012",
+        "name": "LSASS Memory Access / Credential Dump",
+        "description": "Detects processes attempting to access LSASS memory for credential harvesting (Mimikatz-style attack).",
+        "severity": "critical",
+        "category": "credential_access",
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1003.001",
+        "mitre_technique_name": "OS Credential Dumping: LSASS Memory",
+        "query": {
+            "bool": {
+                "must": [{"term": {"event.action": "process_create"}}],
+                "should": [
+                    {"wildcard": {"process.command_line.keyword": "*lsass*"}},
+                    {"wildcard": {"process.command_line.keyword": "*MiniDump*"}},
+                    {"wildcard": {"process.command_line.keyword": "*comsvcs*"}},
+                    {"wildcard": {"message": "*lsass*dump*"}}
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    }
+]

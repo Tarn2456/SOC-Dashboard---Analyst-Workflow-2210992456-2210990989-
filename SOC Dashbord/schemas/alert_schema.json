@@ -1,0 +1,94 @@
+{
+    "index_patterns": [
+        "soc-alerts-*"
+    ],
+    "template": {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        },
+        "mappings": {
+            "properties": {
+                "@timestamp": {
+                    "type": "date"
+                },
+                "alert": {
+                    "properties": {
+                        "id": {
+                            "type": "keyword"
+                        },
+                        "rule_id": {
+                            "type": "keyword"
+                        },
+                        "rule_name": {
+                            "type": "keyword"
+                        },
+                        "severity": {
+                            "type": "keyword"
+                        },
+                        "severity_score": {
+                            "type": "integer"
+                        },
+                        "category": {
+                            "type": "keyword"
+                        },
+                        "description": {
+                            "type": "text",
+                            "fields": {
+                                "keyword": {
+                                    "type": "keyword",
+                                    "ignore_above": 512
+                                }
+                            }
+                        },
+                        "mitre_tactic": {
+                            "type": "keyword"
+                        },
+                        "mitre_technique_id": {
+                            "type": "keyword"
+                        },
+                        "mitre_technique_name": {
+                            "type": "keyword"
+                        },
+                        "status": {
+                            "type": "keyword"
+                        },
+                        "match_count": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "related": {
+                    "properties": {
+                        "hosts": {
+                            "type": "keyword"
+                        },
+                        "users": {
+                            "type": "keyword"
+                        },
+                        "ips": {
+                            "type": "ip"
+                        },
+                        "processes": {
+                            "type": "keyword"
+                        }
+                    }
+                },
+                "event": {
+                    "properties": {
+                        "original_category": {
+                            "type": "keyword"
+                        },
+                        "original_action": {
+                            "type": "keyword"
+                        },
+                        "sample_message": {
+                            "type": "text"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "priority": 100
+}

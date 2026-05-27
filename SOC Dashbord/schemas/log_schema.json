@@ -1,0 +1,99 @@
+{
+  "index_patterns": ["security-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.mapping.total_fields.limit": 2000
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "event": {
+          "properties": {
+            "category": { "type": "keyword" },
+            "action": { "type": "keyword" },
+            "severity": { "type": "integer" },
+            "outcome": { "type": "keyword" },
+            "module": { "type": "keyword" },
+            "dataset": { "type": "keyword" }
+          }
+        },
+        "host": {
+          "properties": {
+            "name": { "type": "keyword" },
+            "os": {
+              "properties": {
+                "name": { "type": "keyword" },
+                "version": { "type": "keyword" }
+              }
+            }
+          }
+        },
+        "user": {
+          "properties": {
+            "name": { "type": "keyword" },
+            "domain": { "type": "keyword" },
+            "id": { "type": "keyword" }
+          }
+        },
+        "process": {
+          "properties": {
+            "name": { "type": "keyword" },
+            "pid": { "type": "integer" },
+            "command_line": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 1024 } } },
+            "executable": { "type": "keyword" },
+            "parent": {
+              "properties": {
+                "name": { "type": "keyword" },
+                "pid": { "type": "integer" }
+              }
+            }
+          }
+        },
+        "source": {
+          "properties": {
+            "ip": { "type": "ip" },
+            "port": { "type": "integer" },
+            "geo": {
+              "properties": {
+                "country_name": { "type": "keyword" },
+                "city_name": { "type": "keyword" },
+                "location": { "type": "geo_point" }
+              }
+            }
+          }
+        },
+        "destination": {
+          "properties": {
+            "ip": { "type": "ip" },
+            "port": { "type": "integer" },
+            "geo": {
+              "properties": {
+                "country_name": { "type": "keyword" },
+                "city_name": { "type": "keyword" },
+                "location": { "type": "geo_point" }
+              }
+            }
+          }
+        },
+        "network": {
+          "properties": {
+            "protocol": { "type": "keyword" },
+            "direction": { "type": "keyword" },
+            "bytes": { "type": "long" }
+          }
+        },
+        "log": {
+          "properties": {
+            "level": { "type": "keyword" },
+            "logger": { "type": "keyword" }
+          }
+        },
+        "message": { "type": "text" },
+        "tags": { "type": "keyword" }
+      }
+    }
+  },
+  "priority": 100
+}

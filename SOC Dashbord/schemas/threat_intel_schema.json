@@ -1,0 +1,26 @@
+{
+    "index_patterns": ["threat-intel-iocs"],
+    "template": {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        },
+        "mappings": {
+            "properties": {
+                "@timestamp": {"type": "date"},
+                "ip": {"type": "ip"},
+                "abuse_score": {"type": "integer"},
+                "risk_level": {"type": "keyword"},
+                "total_reports": {"type": "integer"},
+                "country_code": {"type": "keyword"},
+                "isp": {
+                    "type": "text",
+                    "fields": {
+                        "keyword": {"type": "keyword"}
+                    }
+                },
+                "source": {"type": "keyword"}
+            }
+        }
+    }
+}
